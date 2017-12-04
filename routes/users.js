@@ -97,15 +97,15 @@ router.get('/month', function (req, res) {
     });
 });
 
-router.get('/day', function (req, res) {
-    var day = req.query.day;
-    var city = req.query.city;
-    app.TemperatureAndHumidity.find({day: day}, {_id: false, temperature: true, humidity: true, hour: true}, function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        console.log(typeof result);
-        res.send(result);
-    });
-});
+// router.get('/day', function (req, res) {
+//     var day = req.query.day;
+//     var city = req.query.city;
+//     app.TemperatureAndHumidity.find({day: day}, {_id: false, temperature: true, humidity: true, hour: true}, function(err, result) {
+//         if (err) throw err;
+//         console.log(result);
+//         console.log(typeof result);
+//         res.send(result);
+//     });
+// });
 
 module.exports = router;
