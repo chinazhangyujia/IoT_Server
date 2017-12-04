@@ -30,7 +30,8 @@ var TemperatureAndHumiditySchema = new mongoose.Schema({
     month: Number,
     day: Number,
     hour: Number,
-    city: String
+    city: String,
+    time: Date
 });
 
 var PositionSchema = new mongoose.Schema({

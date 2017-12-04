@@ -21,11 +21,11 @@ router.post('/', function(req, res){
     var hour = req.body.hour;
     var city = req.body.city;
 
-    temperatures.push(temperature);
+    temperatures.push(Number(temperature));
     if (temperatures.length > 10) {
         temperatures.shift();
     }
-    humidities.push(humidity);
+    humidities.push(Number(humidity));
     if (humidities.length > 10) {
         humidities.shift();
     }
@@ -36,7 +36,8 @@ router.post('/', function(req, res){
         month: month,
         day: day,
         hour: hour,
-        city: city
+        city: city,
+        time: new Date()
     });
 
     newData.save(function(err, result) {
@@ -50,14 +51,31 @@ router.post('/', function(req, res){
 });
 
 router.get('/closest', function (req, res) {
-    res.send({temperature: temperatures, humidity: humidities});
+    if (temperatures.length === 0 || humidities.length === 0) {
+        app.TemperatureAndHumidity.find({}, {_id: false, temperature: true, humidity: true},{sort : {time: -1}},
+            function (err, result) {
+            if (err) throw err;
+            console.log(result);
+            for (var i = 0; i < Math.min(10, result.length); i++) {
+                temperatures.push(result[i].temperature);
+                humidities.push(result[i].humidity);
+            }
+            console.log("read from database");
+            res.send({temperature: temperatures, humidity: humidities});
+            });
+    } else {
+        console.log("read from memory");
+        res.send({temperature: temperatures, humidity: humidities});
+    }
 });
 
 router.get('/year', function (req, res) {
     var year = req.query.year;
     var city = req.query.city;
-    console.log(typeof year);
-    app.TemperatureAndHumidity.find({year: year, city: city}, {_id: false, temperature: true, humidity: true, month: true}, function(err, result) {
+    // app.TemperatureAndHumidity.find({year: year}, {_id: false, temperature: true, humidity: true, month: true}).
+    app.TemperatureAndHumidity.aggregate({$match : {year : Number(year)}},
+        {$group : {_id : "$month", avg_temperature : {$avg : "$temperature"}, avg_humidity : {$avg : "$humidity"}}},
+        function(err, result) {
         if (err) throw err;
         console.log(result);
         res.send(result);
@@ -65,9 +83,13 @@ router.get('/year', function (req, res) {
 });
 
 router.get('/month', function (req, res) {
+    var year = (new Date()).getFullYear();
     var month = req.query.month;
     var city = req.query.city;
-    app.TemperatureAndHumidity.find({month: month, city: city}, {_id: false, temperature: true, humidity: true, day: true}, function(err, result) {
+    // app.TemperatureAndHumidity.find({year: year, month: month}, {_id: false, temperature: true, humidity: true, day: true},
+    app.TemperatureAndHumidity.aggregate({$match : {year : Number(year), month : Number(month)}},
+        {$group : {_id : "$day", avg_temperature : {$avg : "$temperature"}, avg_humidity : {$avg : "$humidity"}}},
+        function(err, result) {
         if (err) throw err;
         console.log(result);
         console.log(typeof result);
@@ -78,7 +100,7 @@ router.get('/month', function (req, res) {
 router.get('/day', function (req, res) {
     var day = req.query.day;
     var city = req.query.city;
-    app.TemperatureAndHumidity.find({day: day,city: city}, {_id: false, temperature: true, humidity: true, hour: true}, function(err, result) {
+    app.TemperatureAndHumidity.find({day: day}, {_id: false, temperature: true, humidity: true, hour: true}, function(err, result) {
         if (err) throw err;
         console.log(result);
         console.log(typeof result);
